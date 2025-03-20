@@ -11,6 +11,9 @@ SyntaxHighlighter.registerLanguage("java", java);
 SyntaxHighlighter.registerLanguage("cpp", cpp);
 SyntaxHighlighter.registerLanguage("python", python);
 
+// API base URL - update this after Vercel deployment
+const API_URL = "https://codingback.vercel.app/api";
+
 const Coding = () => {
   const [isAccepted, setIsAccepted] = useState(false);
   const [code, setCode] = useState({
@@ -61,7 +64,7 @@ const Coding = () => {
     setTestResults([]);
     setIsAccepted(false); // Reset the accepted state
 
-    fetch("http://127.0.0.1:5000/get_question")
+    fetch(`${API_URL}/get_question`)
       .then((response) => response.json())
       .then((data) => {
         setQuestion(data);
@@ -123,7 +126,7 @@ const Coding = () => {
     const testCase = question.examples[index];
     setRunningTest(index);
 
-    fetch("http://127.0.0.1:5000/run_test_case", {
+    fetch(`${API_URL}/run_test_case`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -160,7 +163,7 @@ const Coding = () => {
     setSubmitting(true);
     setResults(null);
 
-    fetch("http://127.0.0.1:5000/submit_solution", {
+    fetch(`${API_URL}/submit_solution`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -370,8 +373,9 @@ const Coding = () => {
                     </div>
                   </div>
                   <div>
-                    <strong>Input:</strong> {example.input} <br />
-                    <strong>Output:</strong> {example.output}
+                    <strong>Input:</strong> {JSON.stringify(example.input)}{" "}
+                    <br />
+                    <strong>Output:</strong> {JSON.stringify(example.output)}
                     {example.explanation && (
                       <>
                         <br />
@@ -395,7 +399,7 @@ const Coding = () => {
                     >
                       <div>
                         <strong>Your Output:</strong>{" "}
-                        {testResults[index].actual_output}
+                        {JSON.stringify(testResults[index].actual_output)}
                       </div>
                       {!testResults[index].passed && (
                         <div>
@@ -661,13 +665,15 @@ const Coding = () => {
                     {!test.passed && (
                       <div style={{ marginTop: "5px" }}>
                         <div>
-                          <strong>Input:</strong> {test.input}
+                          <strong>Input:</strong> {JSON.stringify(test.input)}
                         </div>
                         <div>
-                          <strong>Expected:</strong> {test.expected_output}
+                          <strong>Expected:</strong>{" "}
+                          {JSON.stringify(test.expected_output)}
                         </div>
                         <div>
-                          <strong>Your Output:</strong> {test.actual_output}
+                          <strong>Your Output:</strong>{" "}
+                          {JSON.stringify(test.actual_output)}
                         </div>
                         {test.explanation && (
                           <div>

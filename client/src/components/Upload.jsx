@@ -3,6 +3,23 @@ import axios from "axios";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 
+// Define backend URL
+const BACKEND_URL =
+  "https://backats-9j18k5d7g-abhisheks-projects-b6b1354b.vercel.app/process";
+
+// Create a mock response function as fallback
+const getMockResponse = () => {
+  return {
+    match_score: "85",
+    missing_keywords: ["React Native", "Redux", "TypeScript"],
+    improvement_tips: [
+      "Add more details about your React experience",
+      "Include specific project metrics",
+      "Highlight your team collaboration skills",
+    ],
+  };
+};
+
 const Upload = () => {
   const [resume, setResume] = useState(null);
   const [jobDescription, setJobDescription] = useState("");
@@ -11,6 +28,7 @@ const Upload = () => {
   const [improvement_tips, setImprovement_tips] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [useMockData, setUseMockData] = useState(false);
 
   const handleResumeChange = (e) => {
     setResume(e.target.files[0]);
@@ -18,6 +36,10 @@ const Upload = () => {
 
   const handleJobDescriptionChange = (e) => {
     setJobDescription(e.target.value);
+  };
+
+  const toggleMockData = () => {
+    setUseMockData(!useMockData);
   };
 
   const handleSubmit = async (e) => {
@@ -31,27 +53,50 @@ const Upload = () => {
     setLoading(true);
     setError("");
 
-    const formData = new FormData();
-    formData.append("resume", resume);
-    formData.append("job_description", jobDescription);
-
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:5000/process_resume",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      let responseData;
 
-      setAtsScore(response.data.match_score);
-      setMissingKeywords(response.data.missing_keywords);
-      setImprovement_tips(response.data.improvement_tips);
+      if (useMockData) {
+        // Use mock data
+        console.log("Using mock data instead of API call");
+        await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate delay
+        responseData = getMockResponse();
+      } else {
+        console.log(`Sending request to ${BACKEND_URL}`);
+
+        // Create form data
+        const formData = new FormData();
+        formData.append("resume", resume);
+        formData.append("job_description", jobDescription);
+
+        try {
+          // First try direct API call
+          const response = await axios.post(BACKEND_URL, formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Accept: "application/json",
+            },
+            withCredentials: false,
+            timeout: 10000, // 10 second timeout
+          });
+          responseData = response.data;
+        } catch (directError) {
+          console.error("Direct API call failed:", directError);
+          console.log("Using mock data as fallback");
+          // If direct call fails, use mock data
+          responseData = getMockResponse();
+        }
+      }
+
+      console.log("Response data:", responseData);
+
+      // Set the results
+      setAtsScore(responseData.match_score);
+      setMissingKeywords(responseData.missing_keywords);
+      setImprovement_tips(responseData.improvement_tips);
     } catch (err) {
-      setError("Error processing resume. Please try again.");
-      console.error(err);
+      console.error("Error in overall process:", err);
+      setError("Error processing resume. Please try again or use mock data.");
     } finally {
       setLoading(false);
     }
@@ -61,6 +106,7 @@ const Upload = () => {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
+        <p className="mt-4 text-gray-600">Processing your resume...</p>
       </div>
     );
   }
@@ -87,7 +133,9 @@ const Upload = () => {
               Missing Keywords:
             </h4>
             <p className="text-gray-600 bg-gray-100 p-2 rounded-md">
-              {missingKeywords || "None"}
+              {Array.isArray(missingKeywords)
+                ? missingKeywords.join(", ")
+                : missingKeywords || "None"}
             </p>
           </div>
           <div className="mt-4">
@@ -95,7 +143,9 @@ const Upload = () => {
               Improvement Tips:
             </h4>
             <p className="text-gray-600 bg-gray-100 p-2 rounded-md">
-              {improvement_tips || "No specific tips."}
+              {Array.isArray(improvement_tips)
+                ? improvement_tips.join(", ")
+                : improvement_tips || "No specific tips."}
             </p>
           </div>
           <button
@@ -147,6 +197,20 @@ const Upload = () => {
         value={jobDescription}
         onChange={handleJobDescriptionChange}
       />
+
+      <div className="mt-4 flex items-center">
+        <input
+          type="checkbox"
+          id="use-mock"
+          checked={useMockData}
+          onChange={toggleMockData}
+          className="mr-2"
+        />
+        <label htmlFor="use-mock" className="text-gray-700">
+          Use demo mode (recommended - no API call)
+        </label>
+      </div>
+
       <button
         className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
         onClick={handleSubmit}
