@@ -1,0 +1,11 @@
+
+# Python/Flask
+__pycache__/
+venv/
+instance/
+uploads/
+
+
+# Logs
+logs/
+*.log
